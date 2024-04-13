@@ -30,7 +30,10 @@ def test_get_company_profile_failure(api_client):
     expected_url = f"{BASE_URL}/company/{company_number}"
 
     with patch("src.api_client.requests.Session.get") as mock_get:
-        mock_get.side_effect = Exception("An error occurred")
+        # Mimic a failed HTTP request by raising a RequestException
+        from requests.exceptions import RequestException
+
+        mock_get.side_effect = RequestException("An error occurred")
 
         response = api_client.get_company_profile(company_number)
         mock_get.assert_called_once_with(expected_url)
