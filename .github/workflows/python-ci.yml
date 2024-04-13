@@ -29,7 +29,11 @@ jobs:
       run: |
         pip install black
         black --check .
+    - name: Set and print PYTHONPATH
+      run: |
+        export PYTHONPATH=./src
+        echo "PYTHONPATH=$PYTHONPATH"
     - name: Test with pytest
       run: |
         pip install pytest
-        PYTHONPATH=./src pytest
+        pytest
