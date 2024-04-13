@@ -2,6 +2,7 @@
 
 import os
 import pytest
+import shutil
 from unittest.mock import patch, mock_open, MagicMock
 from src.file_manager import FileManager
 
@@ -16,7 +17,7 @@ TEST_URL = "http://example.com/test.pdf"
 def clean_up_directory():
     yield
     if os.path.exists(TEST_DIRECTORY):
-        os.rmdir(TEST_DIRECTORY)
+        shutil.rmtree(TEST_DIRECTORY)
 
 
 def test_directory_creation(clean_up_directory):
