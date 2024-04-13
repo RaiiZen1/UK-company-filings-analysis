@@ -15,7 +15,11 @@ TEST_URL = "http://example.com/test.pdf"
 # Fixture to clean up the created directory after each test
 @pytest.fixture
 def clean_up_directory():
+    # The directory is created before each test runs
+    if not os.path.exists(TEST_DIRECTORY):
+        os.makedirs(TEST_DIRECTORY)
     yield
+    # The directory is removed after each test runs
     if os.path.exists(TEST_DIRECTORY):
         shutil.rmtree(TEST_DIRECTORY)
 
@@ -52,8 +56,10 @@ def test_download_pdf_exists(mock_get, clean_up_directory):
     """
     Test that download_pdf doesn't download the file if it already exists.
     """
+    file_path = os.path.join(TEST_DIRECTORY, TEST_FILE)
     # Set up a fake file
-    open(os.path.join(TEST_DIRECTORY, TEST_FILE), "wb").close()
+    with open(file_path, "wb") as f:
+        f.write(b"")
 
     fm = FileManager(TEST_DIRECTORY)
     fm.download_pdf(TEST_URL, TEST_FILE)
