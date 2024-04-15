@@ -2,4 +2,7 @@ python-dotenv
 requests
 pytest
 black
+pymupdf # 
+pytesseract #
+pillow \
 -e .
