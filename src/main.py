@@ -1,13 +1,16 @@
-from config import COMPANY_NUMBERS
+from config import COMPANY_NUMBERS, TESSERACT_PATH
 from api_client import APIClient
 from rate_limiter import RateLimiter
 from file_manager import FileManager
+from src.ocr import OCR
+
+import logging
 
 
-def process_company(company_number):
+def download_financials(company_number):
     client = APIClient()
     limiter = RateLimiter(600, 300)
-    manager = FileManager(f"./data/{company_number}")
+    manager = FileManager(f"./data/downloaded_pdfs/{company_number}")
 
     response = client.get_company_profile(company_number)
     if response.status_code == 200:
@@ -47,9 +50,28 @@ def process_company(company_number):
         raise Exception("Failed to retrieve company profile")
 
 
+def ocr_financials(company_number):
+    ocr_processor = OCR(TESSERACT_PATH)
+    folder_path = f"./data/downloaded_pdfs/{company_number}/"
+    files = ocr_processor.list_files_in_directory(folder_path)
+    for file in files:
+        pdf_path = f"{folder_path}{file}"
+        output_path = f"./data/searchable_pdfs/{company_number}/searchable_{file}"
+        ocr_processor.perform_ocr_on_pdf(pdf_path, output_path)
+
+
 if __name__ == "__main__":
-    for number in COMPANY_NUMBERS:
-        try:
-            process_company(number)
-        except Exception as e:
-            print(f"Error processing company {number}: {e}")
+    for i in range(3):
+        for number in COMPANY_NUMBERS:
+            try:
+                if i == 0:
+                    logging.info(f"Downloading financials for company {number}")
+                    download_financials(number)
+                elif i == 1:
+                    logging.info(f"Performing OCR on financials for company {number}")
+                    ocr_financials(number)
+                else:
+                    logging.info(f"Analyze company {number}")
+                    pass
+            except Exception as e:
+                print(f"Error processing company {number}: {e}")
