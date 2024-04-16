@@ -1,3 +1,4 @@
+from pathlib import Path
 from config import COMPANY_NUMBERS, TESSERACT_PATH, SEARCH_TERMS
 from api_client import APIClient
 from rate_limiter import RateLimiter
@@ -10,7 +11,6 @@ import logging
 def download_financials(company_number):
     client = APIClient()
     limiter = RateLimiter(600, 300)
-    manager = FileManager(f"./data/downloaded_pdfs/{company_number}")
 
     response = client.get_company_profile(company_number)
     if response.status_code == 200:
@@ -18,7 +18,9 @@ def download_financials(company_number):
         print(
             f"Processing company: {company_profile['company_name']} ({company_number})"
         )
-
+        manager = FileManager(
+            f"./data/downloaded_pdfs/{company_number}-{company_profile['company_name']}"
+        )
         start_index = 0
         more_pages = True
         while more_pages:
@@ -52,16 +54,39 @@ def download_financials(company_number):
 
 def ocr_financials(company_number):
     ocr_processor = OCR(TESSERACT_PATH)
-    folder_path = f"./data/downloaded_pdfs/{company_number}/"
-    files = ocr_processor.list_files_in_directory(folder_path)
-    for file in files:
-        pdf_path = f"{folder_path}{file}"
-        output_path = f"./data/searchable_pdfs/{company_number}/searchable_{file}"
-        ocr_processor.perform_ocr_on_pdf(pdf_path, output_path)
+
+    # The base directory where company folders are located
+    base_dir = Path("./data/downloaded_pdfs")
+
+    # Find the directory that starts with the company number
+    for folder in base_dir.iterdir():
+        if folder.is_dir() and folder.name.startswith(company_number):
+            folder_path = str(folder)
+            files = ocr_processor.list_files_in_directory(folder_path)
+            output_dir = Path(f"./data/searchable_pdfs/{folder.name}")
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            for file in files:
+                pdf_path = folder_path + "/" + file
+                output_path = str(output_dir / f"searchable_{file}")
+                ocr_processor.perform_ocr_on_pdf(pdf_path, output_path)
+            break
+    else:
+        print(f"No directory found for company number {company_number}")
 
 
 def analyze_company(company_number):
-    pdf_dir_path = f"./data/searchable_pdfs/{company_number}"
+    base_dir = Path("./data/searchable_pdfs")
+    # Find the directory that starts with the company number
+    company_folder = None
+    for folder in base_dir.iterdir():
+        if folder.is_dir() and folder.name.startswith(company_number):
+            company_folder = folder
+            break
+    if company_folder is None:
+        print(f"No directory found for company number {company_number}")
+        return
+    pdf_dir_path = str(company_folder)
     output_csv_path = "./data/term_counts.csv"
     search_pdf_and_output_to_csv(pdf_dir_path, SEARCH_TERMS, output_csv_path)
 
