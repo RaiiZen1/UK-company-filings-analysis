@@ -1,9 +1,9 @@
-from config import COMPANY_NUMBERS, TESSERACT_PATH
+from config import COMPANY_NUMBERS, TESSERACT_PATH, SEARCH_TERMS
 from api_client import APIClient
 from rate_limiter import RateLimiter
 from file_manager import FileManager
 from src.ocr import OCR
-
+from src.pdf_search import search_pdf_and_output_to_csv
 import logging
 
 
@@ -60,6 +60,12 @@ def ocr_financials(company_number):
         ocr_processor.perform_ocr_on_pdf(pdf_path, output_path)
 
 
+def analyze_company(company_number):
+    pdf_dir_path = f"./data/searchable_pdfs/{company_number}"
+    output_csv_path = "./data/term_counts.csv"
+    search_pdf_and_output_to_csv(pdf_dir_path, SEARCH_TERMS, output_csv_path)
+
+
 if __name__ == "__main__":
     for i in range(3):
         for number in COMPANY_NUMBERS:
@@ -72,6 +78,7 @@ if __name__ == "__main__":
                     ocr_financials(number)
                 else:
                     logging.info(f"Analyze company {number}")
+                    analyze_company(number)
                     pass
             except Exception as e:
                 print(f"Error processing company {number}: {e}")
