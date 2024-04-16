@@ -27,11 +27,14 @@ def search_pdf_and_output_to_csv(pdf_dir_path: str, terms: list, output_csv_path
             )
             csv_writer.writeheader()
 
+    # Extract company_id and company name from directory name
+    folder_name = os.path.basename(pdf_dir_path)
+    company_id, company_name = folder_name.split("-", 1)  # Split only on the first dash
+
     # Iterate over all PDFs in the directory
     for filename in os.listdir(pdf_dir_path):
         if filename.endswith(".pdf"):
             pdf_path = os.path.join(pdf_dir_path, filename)
-            company_id = os.path.basename(pdf_dir_path)
             parts = filename.replace(".pdf", "").split("_")
             date_part = parts[1]
             type_part = "_".join(parts[2:])  # join the remaining parts to form the type
@@ -49,9 +52,8 @@ def search_pdf_and_output_to_csv(pdf_dir_path: str, terms: list, output_csv_path
                 for term in terms:
                     # Find instances of the term
                     areas = page.search_for(term)
-                    temp = term_counts[term]
                     term_counts[term] += len(areas)  # Count occurrences
-                    if temp != term_counts[term]:
+                    if len(areas) > 0:
                         logging.info(f"Found term '{term}' on page {page_num + 1}")
 
             # Close the document
@@ -64,7 +66,7 @@ def search_pdf_and_output_to_csv(pdf_dir_path: str, terms: list, output_csv_path
                 )
                 row_data = {
                     "company_id": company_id,
-                    "name": "N/A",
+                    "name": company_name,
                     "date": date,
                     "type": type_part,
                     **term_counts,
