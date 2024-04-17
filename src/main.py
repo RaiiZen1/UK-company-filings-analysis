@@ -9,8 +9,8 @@ import logging
 
 
 def download_financials(company_number):
-    client = APIClient()
-    limiter = RateLimiter(600, 300)
+    limiter = RateLimiter(595, 300)
+    client = APIClient(limiter)
 
     response = client.get_company_profile(company_number)
     if response.status_code == 200:
@@ -24,7 +24,7 @@ def download_financials(company_number):
         start_index = 0
         more_pages = True
         while more_pages:
-            limiter.check()
+            # limiter.check()
             history_response = client.get_filing_history_page(
                 company_number, start_index
             )
