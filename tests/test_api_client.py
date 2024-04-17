@@ -2,11 +2,21 @@ import pytest
 from unittest.mock import patch, Mock
 from src.api_client import APIClient
 from src.config import BASE_URL
+from src.api_client import APIClient
+from src.rate_limiter import RateLimiter
 
 
 @pytest.fixture
-def api_client():
-    return APIClient()
+def rate_limiter():
+    with patch("src.rate_limiter.RateLimiter.check", return_value=None) as mock_check:
+        yield RateLimiter(
+            limit=595, period=300
+        )  # These values can be arbitrary as the check is mocked
+
+
+@pytest.fixture
+def api_client(rate_limiter):
+    return APIClient(rate_limiter)
 
 
 def test_get_company_profile_success(api_client):
