@@ -40,17 +40,19 @@ class RateLimiter:
 
     def check(self):
         """
-        Check whether a new request can be made. If the limit has been reached within the period,
-        sleep until the end of the period before allowing new requests.
+        Check whether a new request can be made. If the limit has been reached or the period has expired,
+        handle accordingly.
         """
+        current_time = time.time()
+        elapsed_time = current_time - self.start_time
+
+        if elapsed_time >= self.period:
+            self._reset_period()
+
         if self.requests >= self.limit:
-            elapsed_time = time.time() - self.start_time
-            if elapsed_time < self.period:
-                sleep_time = self.period - elapsed_time
-                logger.info(
-                    f"Rate limit exceeded. Sleeping for {sleep_time:.2f} seconds."
-                )
-                time.sleep(sleep_time)
+            sleep_time = self.period - elapsed_time
+            logger.info(f"Rate limit exceeded. Sleeping for {sleep_time:.2f} seconds.")
+            time.sleep(sleep_time)
             self._reset_period()
 
         self.requests += 1
