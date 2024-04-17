@@ -2,6 +2,7 @@ import requests
 import logging
 from typing import Optional
 from src.config import API_KEY, BASE_URL
+from src.rate_limiter import RateLimiter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -19,12 +20,13 @@ class APIClient:
     for making GET requests to the API for different endpoints.
     """
 
-    def __init__(self):
+    def __init__(self, rate_limiter: RateLimiter):
         """
         Initialize the APIClient instance with an authenticated session.
         """
         self.session = requests.Session()
         self.session.auth = (API_KEY, "")
+        self.rate_limiter = rate_limiter
 
     def get(self, url: str) -> Optional[requests.Response]:
         """
@@ -38,6 +40,7 @@ class APIClient:
             None: If there is a RequestException during the API call.
         """
         try:
+            self.rate_limiter.check()  # Enforce rate limiting before making a request
             response = self.session.get(url)
             response.raise_for_status()
             return response
