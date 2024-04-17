@@ -9,16 +9,17 @@ import logging
 
 
 def download_financials(company_number, limiter):
-    # Check if the company folder already exists
-    base_dir = Path("./data/downloaded_pdfs")
-    company_folder = None
-    for folder in base_dir.iterdir():
-        if folder.is_dir() and folder.name.startswith(company_number):
-            company_folder = folder
-            break
-    if company_folder is not None and company_folder.exists():
-        print(f"Company folder already exists for {company_number}. Skipping")
-        return
+    # Check if the company folder already exists if the downloaded_pdfs directory already exists
+    if Path("./data/downloaded_pdfs").exists():
+        base_dir = Path("./data/downloaded_pdfs")
+        company_folder = None
+        for folder in base_dir.iterdir():
+            if folder.is_dir() and folder.name.startswith(company_number):
+                company_folder = folder
+                break
+        if company_folder is not None and company_folder.exists():
+            print(f"Company folder already exists for {company_number}. Skipping")
+            return
 
     client = APIClient(limiter)
     response = client.get_company_profile(company_number)
