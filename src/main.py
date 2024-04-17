@@ -8,10 +8,19 @@ from src.pdf_search import search_pdf_and_output_to_csv
 import logging
 
 
-def download_financials(company_number):
-    limiter = RateLimiter(595, 300)
-    client = APIClient(limiter)
+def download_financials(company_number, limiter):
+    # Check if the company folder already exists
+    base_dir = Path("./data/downloaded_pdfs")
+    company_folder = None
+    for folder in base_dir.iterdir():
+        if folder.is_dir() and folder.name.startswith(company_number):
+            company_folder = folder
+            break
+    if company_folder is not None and company_folder.exists():
+        print(f"Company folder already exists for {company_number}. Skipping")
+        return
 
+    client = APIClient(limiter)
     response = client.get_company_profile(company_number)
     if response.status_code == 200:
         company_profile = response.json()
@@ -24,7 +33,6 @@ def download_financials(company_number):
         start_index = 0
         more_pages = True
         while more_pages:
-            # limiter.check()
             history_response = client.get_filing_history_page(
                 company_number, start_index
             )
@@ -92,12 +100,13 @@ def analyze_company(company_number):
 
 
 if __name__ == "__main__":
+    limiter = RateLimiter(300, 300)
     for i in range(3):
         for number in COMPANY_NUMBERS:
             try:
                 if i == 0:
                     logging.info(f"Downloading financials for company {number}")
-                    download_financials(number)
+                    download_financials(number, limiter)
                 elif i == 1:
                     logging.info(f"Performing OCR on financials for company {number}")
                     ocr_financials(number)
