@@ -29,7 +29,8 @@ def download_financials(company_number, limiter):
             f"Processing company: {company_profile['company_name']} ({company_number})"
         )
         manager = FileManager(
-            f"./data/downloaded_pdfs/{company_number}-{company_profile['company_name']}"
+            f"./data/downloaded_pdfs/{company_number}-{company_profile['company_name']}",
+            limiter,
         )
         start_index = 0
         more_pages = True
@@ -101,7 +102,7 @@ def analyze_company(company_number):
 
 
 if __name__ == "__main__":
-    limiter = RateLimiter(300, 300)
+    limiter = RateLimiter(590, 300)
     for i in range(3):
         for number in COMPANY_NUMBERS:
             try:
