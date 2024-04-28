@@ -1,7 +1,8 @@
 import os
 import logging
 import requests
-from src.config import API_KEY, BASE_URL
+from src.config import API_KEY
+from src.rate_limiter import RateLimiter
 
 # Configure logging at the top of your module
 logging.basicConfig(
@@ -15,13 +16,14 @@ class FileManager:
     creating directories and downloading files.
     """
 
-    def __init__(self, directory):
+    def __init__(self, directory, rate_limiter: RateLimiter):
         """
         Initialize FileManager with a specific directory. Ensure the directory exists.
 
         :param directory: Directory path where files will be stored.
         """
         self.directory = directory
+        self.rate_limiter = rate_limiter
         os.makedirs(directory, exist_ok=True)
         logging.info(f"Directory created or exists: {directory}")
 
@@ -36,6 +38,7 @@ class FileManager:
         file_path = os.path.join(self.directory, filename)
         if not os.path.exists(file_path):
             try:
+                self.rate_limiter.check()  # Enforce rate limiting before making a request
                 response = requests.get(
                     document_url, auth=(API_KEY, ""), allow_redirects=True
                 )
