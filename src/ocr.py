@@ -1,10 +1,13 @@
 import fitz  # PyMuPDF
 import pytesseract
-from PIL import Image
 import io
 import os
 import logging
+import csv
+from pathlib import Path
 from typing import List
+from PIL import Image
+
 
 # Configure logging
 logging.basicConfig(
@@ -62,6 +65,7 @@ class OCR:
             doc = fitz.open(pdf_path)
         except Exception as e:
             logging.error("Error opening PDF file at %s: %s", pdf_path, e)
+            self._log_pdf_error(pdf_path)
             return
 
         # Check if the PDF already exists
@@ -92,3 +96,15 @@ class OCR:
             logging.info("Saved searchable PDF to: %s", output_path)
         except Exception as e:
             logging.error("Error saving searchable PDF to %s: %s", output_path, e)
+
+    def _log_pdf_error(self, pdf_path):
+        """
+        Logs the path of a PDF that failed to open into a CSV file.
+
+        Parameters:
+            pdf_path (str): The path to the PDF file that failed to open.
+        """
+        error_log_path = Path("./data/error_log.csv")
+        with error_log_path.open(mode="a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([pdf_path])
