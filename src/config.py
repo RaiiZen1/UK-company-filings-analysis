@@ -10,3 +10,6 @@ except FileNotFoundError:
 # COMPANY_NUMBERS = ["01087941", "04168334", "02019274"] # For testing
 SEARCH_TERMS = ["plastic", "plastic tax", "plastic levy", "environmental tax"]
 # SEARCH_TERMS = ["company", "accounts", "financial", "tax"] # For testing
+DOWNLOAD_FINANCIALS = False
+OCR_PDFS = True
+ANALYZE_PDFS = True
