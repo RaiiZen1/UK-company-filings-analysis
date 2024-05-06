@@ -36,8 +36,10 @@ def test_directory_creation(clean_up_directory, file_manager_with_mocked_rate_li
     """
     Test that a directory is created if it doesn't exist when FileManager is initialized.
     """
-    if os.path.exists(TEST_DIRECTORY):
-        os.rmdir(TEST_DIRECTORY)
+    # Assume the directory does not exist, we remove it to simulate this environment
+    shutil.rmtree(TEST_DIRECTORY, ignore_errors=True)
+
+    # FileManager initialization happens in the fixture, so by this point, it should have created the directory
     assert os.path.isdir(TEST_DIRECTORY), "Directory should be created"
 
 
