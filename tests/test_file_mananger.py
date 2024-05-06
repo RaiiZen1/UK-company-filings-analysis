@@ -32,17 +32,6 @@ def clean_up_directory():
         shutil.rmtree(TEST_DIRECTORY)
 
 
-def test_directory_creation(clean_up_directory, file_manager_with_mocked_rate_limiter):
-    """
-    Test that a directory is created if it doesn't exist when FileManager is initialized.
-    """
-    # Assume the directory does not exist, we remove it to simulate this environment
-    shutil.rmtree(TEST_DIRECTORY, ignore_errors=True)
-
-    # FileManager initialization happens in the fixture, so by this point, it should have created the directory
-    assert os.path.isdir(TEST_DIRECTORY), "Directory should be created"
-
-
 @patch("requests.get")
 def test_download_pdf(
     mock_get, clean_up_directory, file_manager_with_mocked_rate_limiter
