@@ -12,6 +12,14 @@ TEST_FILE = "test.pdf"
 TEST_URL = "http://example.com/test.pdf"
 
 
+# Fixture to provide a FileManager with a mocked RateLimiter
+@pytest.fixture
+def file_manager_with_mocked_rate_limiter(clean_up_directory):
+    rate_limiter = MagicMock()  # Create a MagicMock object for the RateLimiter
+    fm = FileManager(TEST_DIRECTORY, rate_limiter)
+    return fm
+
+
 # Fixture to clean up the created directory after each test
 @pytest.fixture
 def clean_up_directory():
@@ -24,18 +32,19 @@ def clean_up_directory():
         shutil.rmtree(TEST_DIRECTORY)
 
 
-def test_directory_creation(clean_up_directory):
+def test_directory_creation(clean_up_directory, file_manager_with_mocked_rate_limiter):
     """
     Test that a directory is created if it doesn't exist when FileManager is initialized.
     """
     if os.path.exists(TEST_DIRECTORY):
         os.rmdir(TEST_DIRECTORY)
-    fm = FileManager(TEST_DIRECTORY)
     assert os.path.isdir(TEST_DIRECTORY), "Directory should be created"
 
 
 @patch("requests.get")
-def test_download_pdf(mock_get, clean_up_directory):
+def test_download_pdf(
+    mock_get, clean_up_directory, file_manager_with_mocked_rate_limiter
+):
     """
     Test that a PDF is downloaded correctly.
     """
@@ -43,8 +52,7 @@ def test_download_pdf(mock_get, clean_up_directory):
     mock_get.return_value.ok = True
     mock_get.return_value.content = b"Test PDF content"
 
-    fm = FileManager(TEST_DIRECTORY)
-    fm.download_pdf(TEST_URL, TEST_FILE)
+    file_manager_with_mocked_rate_limiter.download_pdf(TEST_URL, TEST_FILE)
 
     assert os.path.isfile(
         os.path.join(TEST_DIRECTORY, TEST_FILE)
@@ -52,7 +60,9 @@ def test_download_pdf(mock_get, clean_up_directory):
 
 
 @patch("requests.get")
-def test_download_pdf_exists(mock_get, clean_up_directory):
+def test_download_pdf_exists(
+    mock_get, clean_up_directory, file_manager_with_mocked_rate_limiter
+):
     """
     Test that download_pdf doesn't download the file if it already exists.
     """
@@ -61,21 +71,21 @@ def test_download_pdf_exists(mock_get, clean_up_directory):
     with open(file_path, "wb") as f:
         f.write(b"")
 
-    fm = FileManager(TEST_DIRECTORY)
-    fm.download_pdf(TEST_URL, TEST_FILE)
+    file_manager_with_mocked_rate_limiter.download_pdf(TEST_URL, TEST_FILE)
 
     # Assert get was not called because the file exists
     mock_get.assert_not_called()
 
 
 @patch("requests.get")
-def test_download_pdf_failure(mock_get, clean_up_directory):
+def test_download_pdf_failure(
+    mock_get, clean_up_directory, file_manager_with_mocked_rate_limiter
+):
     """
     Test that download_pdf raises an exception on a failed download.
     """
     # Configure the mock to raise an HTTP error
     mock_get.return_value.raise_for_status.side_effect = Exception("Failed to download")
 
-    fm = FileManager(TEST_DIRECTORY)
     with pytest.raises(Exception, match="Failed to download"):
-        fm.download_pdf(TEST_URL, TEST_FILE)
+        file_manager_with_mocked_rate_limiter.download_pdf(TEST_URL, TEST_FILE)
