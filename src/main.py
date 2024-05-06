@@ -1,5 +1,12 @@
 from pathlib import Path
-from config import COMPANY_NUMBERS, TESSERACT_PATH, SEARCH_TERMS
+from config import (
+    COMPANY_NUMBERS,
+    TESSERACT_PATH,
+    SEARCH_TERMS,
+    DOWNLOAD_FINANCIALS,
+    OCR_PDFS,
+    ANALYZE_PDFS,
+)
 from api_client import APIClient
 from rate_limiter import RateLimiter
 from file_manager import FileManager
@@ -101,20 +108,24 @@ def analyze_company(company_number):
     search_pdf_and_output_to_csv(pdf_dir_path, SEARCH_TERMS, output_csv_path)
 
 
-if __name__ == "__main__":
+def main():
     limiter = RateLimiter(590, 300)
-    for i in range(3):
-        for number in COMPANY_NUMBERS:
-            try:
-                if i == 0:
-                    logging.info(f"Downloading financials for company {number}")
-                    download_financials(number, limiter)
-                elif i == 1:
-                    logging.info(f"Performing OCR on financials for company {number}")
-                    ocr_financials(number)
-                else:
-                    logging.info(f"Analyze company {number}")
-                    analyze_company(number)
-                    pass
-            except Exception as e:
-                print(f"Error processing company {number}: {e}")
+    for number in COMPANY_NUMBERS:
+        try:
+            if DOWNLOAD_FINANCIALS:
+                logging.info(f"Downloading financials for company {number}")
+                download_financials(number, limiter)
+            elif OCR_PDFS:
+                logging.info(f"Performing OCR on financials for company {number}")
+                ocr_financials(number)
+            elif ANALYZE_PDFS:
+                logging.info(f"Analyze company {number}")
+                analyze_company(number)
+            else:
+                print("No action specified")
+        except Exception as e:
+            print(f"Error processing company {number}: {e}")
+
+
+if __name__ == "__main__":
+    main()
