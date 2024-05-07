@@ -13,6 +13,7 @@ from file_manager import FileManager
 from src.ocr import OCR
 from src.pdf_search import search_pdf_and_output_to_csv
 import logging
+import concurrent.futures
 
 
 def download_financials(company_number, limiter):
@@ -81,6 +82,12 @@ def ocr_financials(company_number):
             folder_path = str(folder)
             files = ocr_processor.list_files_in_directory(folder_path)
             output_dir = Path(f"./data/searchable_pdfs/{folder.name}")
+            ############################
+            # Temporary fix to avoid reprocessing
+            if output_dir.exists():
+                print(f"Output directory already exists for {company_number}. Skipping")
+                return
+            ############################
             output_dir.mkdir(parents=True, exist_ok=True)
 
             for file in files:
@@ -110,21 +117,23 @@ def analyze_company(company_number):
 
 def main():
     limiter = RateLimiter(590, 300)
-    for number in COMPANY_NUMBERS:
-        try:
-            if DOWNLOAD_FINANCIALS:
+    try:
+        if DOWNLOAD_FINANCIALS:
+            for number in COMPANY_NUMBERS:
                 logging.info(f"Downloading financials for company {number}")
                 download_financials(number, limiter)
-            elif OCR_PDFS:
-                logging.info(f"Performing OCR on financials for company {number}")
-                ocr_financials(number)
-            elif ANALYZE_PDFS:
+        elif OCR_PDFS:
+            logging.info(f"Performing OCR on financials for company")
+            with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+                executor.map(ocr_financials, COMPANY_NUMBERS)
+        elif ANALYZE_PDFS:
+            for number in COMPANY_NUMBERS:
                 logging.info(f"Analyze company {number}")
                 analyze_company(number)
-            else:
-                print("No action specified")
-        except Exception as e:
-            print(f"Error processing company {number}: {e}")
+        else:
+            print("No action specified")
+    except Exception as e:
+        print(f"Error processing company {number}: {e}")
 
 
 if __name__ == "__main__":
