@@ -84,9 +84,9 @@ def ocr_financials(company_number):
             output_dir = Path(f"./data/searchable_pdfs/{folder.name}")
             ############################
             # Temporary fix to avoid reprocessing
-            if output_dir.exists():
-                print(f"Output directory already exists for {company_number}. Skipping")
-                return
+            # if output_dir.exists():
+            #     print(f"Output directory already exists for {company_number}. Skipping")
+            #     return
             ############################
             output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -117,23 +117,31 @@ def analyze_company(company_number):
 
 def main():
     limiter = RateLimiter(590, 300)
-    try:
-        if DOWNLOAD_FINANCIALS:
-            for number in COMPANY_NUMBERS:
+    if DOWNLOAD_FINANCIALS:
+        for number in COMPANY_NUMBERS:
+            try:
                 logging.info(f"Downloading financials for company {number}")
                 download_financials(number, limiter)
-        elif OCR_PDFS:
-            logging.info(f"Performing OCR on financials for company")
+            except Exception as e:
+                logging.error(f"Error downloading financials for company {number}: {e}")
+
+    if OCR_PDFS:
+        logging.info("Performing OCR on financials")
+        try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
                 executor.map(ocr_financials, COMPANY_NUMBERS)
-        elif ANALYZE_PDFS:
-            for number in COMPANY_NUMBERS:
+        except Exception as e:
+            logging.error(f"Error performing OCR on financials: {e}")
+
+    if ANALYZE_PDFS:
+        for number in COMPANY_NUMBERS:
+            try:
                 logging.info(f"Analyze company {number}")
                 analyze_company(number)
-        else:
-            print("No action specified")
-    except Exception as e:
-        print(f"Error processing company {number}: {e}")
+            except Exception as e:
+                logging.error(f"Error analyzing company {number}: {e}")
+    if not DOWNLOAD_FINANCIALS and not OCR_PDFS and not ANALYZE_PDFS:
+        print("No action specified")
 
 
 if __name__ == "__main__":
