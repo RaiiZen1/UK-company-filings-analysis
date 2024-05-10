@@ -140,6 +140,7 @@ def main():
                 analyze_company(number)
             except Exception as e:
                 logging.error(f"Error analyzing company {number}: {e}")
+
     if not DOWNLOAD_FINANCIALS and not OCR_PDFS and not ANALYZE_PDFS:
         print("No action specified")
 

@@ -5,7 +5,7 @@ BASE_URL = "https://api.companieshouse.gov.uk"
 TESSERACT_PATH = r"S:\Users\Hiwi\Plastic Tax\Program Files\Tesseract\tesseract.exe"
 
 SEARCH_TERMS = ["plastic", "plastic tax", "plastic levy", "environmental tax"]
-DOWNLOAD_FINANCIALS = False
+DOWNLOAD_FINANCIALS = True
 OCR_PDFS = True
 ANALYZE_PDFS = True
 
