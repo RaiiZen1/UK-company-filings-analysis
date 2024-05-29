@@ -15,19 +15,32 @@ from src.pdf_search import search_pdf_and_output_to_csv
 import logging
 import concurrent.futures
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 def download_financials(company_number, limiter):
-    # Check if the company folder already exists if the downloaded_pdfs directory already exists
-    if Path("./data/downloaded_pdfs").exists():
-        base_dir = Path("./data/downloaded_pdfs")
-        company_folder = None
+    """
+    Download financial documents for a given company.
+
+    Checks if the company's folder already exists to avoid redundancy. If not, it retrieves the company's
+    profile and iterates over its filing history to download PDFs related to financial accounts.
+
+    Args:
+    company_number (str): The company number for which to download financials.
+    limiter (RateLimiter): A rate limiter object to manage API call rates.
+
+    Raises:
+    Exception: If there is an error in fetching company profile or filing history.
+    """
+    base_dir = Path("./data/downloaded_pdfs")
+    # Ensure base directory for downloaded PDFs exists
+    if base_dir.exists():
         for folder in base_dir.iterdir():
             if folder.is_dir() and folder.name.startswith(company_number):
-                company_folder = folder
-                break
-        if company_folder is not None and company_folder.exists():
-            print(f"Company folder already exists for {company_number}. Skipping")
-            return
+                print(f"Company folder already exists for {company_number}. Skipping")
+                return
 
     client = APIClient(limiter)
     response = client.get_company_profile(company_number)
@@ -71,25 +84,23 @@ def download_financials(company_number, limiter):
 
 
 def ocr_financials(company_number):
+    """
+    Perform OCR on downloaded financial PDFs of a specific company.
+
+    This function scans the downloaded PDFs directory for a folder matching the company number,
+    and performs OCR on each PDF to convert them into searchable text files.
+
+    Args:
+    company_number (str): The company number whose financials are to be OCRed.
+    """
     ocr_processor = OCR(TESSERACT_PATH)
-
-    # The base directory where company folders are located
     base_dir = Path("./data/downloaded_pdfs")
-
-    # Find the directory that starts with the company number
     for folder in base_dir.iterdir():
         if folder.is_dir() and folder.name.startswith(company_number):
             folder_path = str(folder)
             files = ocr_processor.list_files_in_directory(folder_path)
             output_dir = Path(f"./data/searchable_pdfs/{folder.name}")
-            ############################
-            # Temporary fix to avoid reprocessing
-            # if output_dir.exists():
-            #     print(f"Output directory already exists for {company_number}. Skipping")
-            #     return
-            ############################
             output_dir.mkdir(parents=True, exist_ok=True)
-
             for file in files:
                 pdf_path = folder_path + "/" + file
                 output_path = str(output_dir / f"searchable_{file}")
@@ -100,8 +111,16 @@ def ocr_financials(company_number):
 
 
 def analyze_company(company_number):
+    """
+    Analyze the OCR-processed PDFs of a company to count occurrences of specified search terms.
+
+    This function searches through OCR-processed PDFs for specified terms and generates a CSV
+    with the counts of each term per document.
+
+    Args:
+    company_number (str): The company number whose PDFs are to be analyzed.
+    """
     base_dir = Path("./data/searchable_pdfs")
-    # Find the directory that starts with the company number
     company_folder = None
     for folder in base_dir.iterdir():
         if folder.is_dir() and folder.name.startswith(company_number):
@@ -116,6 +135,12 @@ def analyze_company(company_number):
 
 
 def main():
+    """
+    Main execution function to manage the workflow of downloading, OCR processing, and analyzing company financials.
+
+    Based on configuration settings, this script manages the sequence of downloading, OCR processing,
+    and analyzing financial documents of specified companies.
+    """
     limiter = RateLimiter(590, 300)
     if DOWNLOAD_FINANCIALS:
         for number in COMPANY_NUMBERS:
@@ -124,6 +149,7 @@ def main():
                 download_financials(number, limiter)
             except Exception as e:
                 logging.error(f"Error downloading financials for company {number}: {e}")
+                continue
 
     if OCR_PDFS:
         logging.info("Performing OCR on financials")
@@ -140,6 +166,7 @@ def main():
                 analyze_company(number)
             except Exception as e:
                 logging.error(f"Error analyzing company {number}: {e}")
+                continue
 
     if not DOWNLOAD_FINANCIALS and not OCR_PDFS and not ANALYZE_PDFS:
         print("No action specified")
